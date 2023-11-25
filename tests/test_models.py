@@ -198,3 +198,35 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(found.count(), count)
         for product in found:
             self.assertEqual(product.category, first_category)
+
+    def test_deserialize_product(self):
+        """It should correctly turn dictionary into object"""
+        product = ProductFactory()
+        data = product.serialize()
+        app.logger.info("Dictionary from instance: %s", data)
+        # data["price"] = "HUGE PRICE"
+        product = Product()
+        # self.assertRaises(DataValidationError, product.deserialize, data)
+        data["available"] = "very available"
+        self.assertRaises(DataValidationError, product.deserialize, data)
+        data["available"] = True
+        data["category"] = "UFO"
+        self.assertRaises(DataValidationError, product.deserialize, data)
+        data = 5
+        self.assertRaises(DataValidationError, product.deserialize, data)
+
+    def test_find_by_price(self):
+        """It should find products in the database by price"""
+        products = ProductFactory.create_batch(10)
+        for product in products:
+            product.create()
+        first_price = products[0].price
+        count = len([product for product in products if product.price == first_price])
+        found = Product.find_by_price(first_price)
+        self.assertEqual(found.count(), count)
+        for product in found:
+            self.assertEqual(product.price, first_price)
+        # Check if price is represented as a string
+        found = Product.find_by_price(str(first_price) + ' "')
+        for product in found:
+            self.assertEqual(product.price, first_price)
