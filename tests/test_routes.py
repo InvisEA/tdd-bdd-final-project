@@ -191,11 +191,34 @@ class TestProductRoutes(TestCase):
         self.assertEqual(data["name"], "SUPER UPDATE")
 
     def test_update_a_product_not_found(self):
-        """It should not update product that is missing"""
+        """It should not update a product that is missing"""
         response = self.client.put(f"{BASE_URL}/0", json=ProductFactory().serialize())
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         data = response.get_json()
         self.assertIn("does not exist", data["message"])
+
+    def test_list_all_products(self):
+        """It should list all products"""
+        products = self._create_products(5)
+        self.assertEqual(len(products), 5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.get_json()), 5)
+
+    def test_delete_a_product(self):
+        """It should delete a product from the database"""
+        products = self._create_products(5)
+        count = self.get_product_count()
+        self.assertEqual(count, 5)
+        test_product = products[0]
+        response = self.client.delete(f"{BASE_URL}/{test_product.id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(response.data), 0)
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        count = self.get_product_count()
+        self.assertEqual(count, 4)
+
 
     ######################################################################
     # Utility functions
